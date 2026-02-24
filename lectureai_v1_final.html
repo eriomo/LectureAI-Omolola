@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LectureAI – Human–AI Co-Orchestration</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --green-900:#0d2b1e;--green-800:#1b4332;--green-700:#2d6a4f;--green-600:#40916c;
+  --green-400:#74c69d;--green-200:#b7e4c7;--green-100:#d8f3dc;--green-50:#f0faf4;
+  --cream:#faf8f4;--warm:#f2ede6;--border:#e2ddd6;--text:#1a1a1a;--muted:#6b6b6b;
+  --shadow:0 4px 24px rgba(0,0,0,0.08);--radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Source Sans 3',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;font-size:15px}
+
+/* ── HEADER ── */
+header{
+  background:linear-gradient(135deg,var(--green-900) 0%,var(--green-800) 60%,var(--green-700) 100%);
+  color:white;padding:1.1rem 1.8rem;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 2px 20px rgba(0,0,0,0.3);position:sticky;top:0;z-index:100;
+}
+.header-left{display:flex;align-items:center;gap:1rem}
+.logo{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;letter-spacing:-0.5px}
+.logo span{color:var(--green-400)}
+.header-sub{font-size:0.78rem;opacity:0.65;margin-top:1px}
+.version-badge{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);
+  color:white;padding:4px 12px;border-radius:20px;font-size:0.72rem;font-weight:600;letter-spacing:0.5px;backdrop-filter:blur(4px)}
+
+/* ── TABS ── */
+.tabs{display:flex;background:white;border-bottom:2px solid var(--border);overflow-x:auto;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.tab{padding:0.85rem 1.4rem;cursor:pointer;font-weight:500;font-size:0.88rem;white-space:nowrap;
+  border-bottom:3px solid transparent;color:var(--muted);transition:all 0.2s;display:flex;align-items:center;gap:0.4rem}
+.tab:hover{color:var(--green-700);background:var(--green-50)}
+.tab.active{border-bottom-color:var(--green-700);color:var(--green-700);font-weight:600;background:var(--green-50)}
+
+/* ── LAYOUT ── */
+.content{max-width:900px;margin:0 auto;padding:1.6rem 1.2rem}
+.section{display:none;animation:fadeIn 0.3s ease}.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── FORMS ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:620px){.form-grid{grid-template-columns:1fr}}
+.form-group{margin-bottom:0;position:relative}
+.form-group.full{grid-column:1/-1}
+label{display:block;font-weight:600;font-size:0.82rem;margin-bottom:0.4rem;color:var(--green-800);letter-spacing:0.3px;text-transform:uppercase}
+input,select,textarea{width:100%;padding:0.65rem 0.9rem;border:1.5px solid var(--border);border-radius:10px;
+  font-family:'Source Sans 3',sans-serif;font-size:0.94rem;background:white;color:var(--text);
+  transition:border-color 0.2s,box-shadow 0.2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green-600);box-shadow:0 0 0 3px rgba(64,145,108,0.12)}
+textarea{resize:vertical;min-height:100px;line-height:1.5}
+
+/* ── AUTOCOMPLETE ── */
+.autocomplete-wrapper{position:relative}
+.suggestions{
+  position:absolute;top:100%;left:0;right:0;z-index:200;
+  background:white;border:1.5px solid var(--green-400);border-top:none;border-radius:0 0 12px 12px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:220px;overflow-y:auto;display:none}
+.suggestions.show{display:block}
+.suggestion-item{padding:0.6rem 0.9rem;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:0.6rem;transition:background 0.15s}
+.suggestion-item:hover,.suggestion-item.active{background:var(--green-50)}
+.suggestion-item .cat{font-size:0.7rem;padding:2px 7px;border-radius:10px;font-weight:600;white-space:nowrap}
+.suggestion-highlight{color:var(--green-700);font-weight:700}
+.cat-stats{background:#fde8d8;color:#c0440a}
+.cat-ml{background:#dce8fd;color:#1a3f80}
+.cat-data{background:#f0d8fd;color:#6a1a80}
+.cat-viz{background:#fff3cd;color:#856404}
+.cat-prog{background:#d8f0e8;color:#1a6640}
+.cat-ethics{background:#f8d7da;color:#842029}
+.cat-cloud{background:#cfe2ff;color:#084298}
+.cat-db{background:#e2d9f3;color:#3d1a78}
+
+/* ── OBJECTIVE SUGGEST ── */
+.obj-suggest{margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.4rem}
+.obj-chip{background:var(--green-100);color:var(--green-800);border:1px solid var(--green-200);
+  padding:3px 10px;border-radius:20px;font-size:0.78rem;cursor:pointer;transition:all 0.15s}
+.obj-chip:hover{background:var(--green-200)}
+
+/* ── RANGE SLIDER ── */
+.range-row{display:flex;align-items:center;gap:0.8rem}
+.range-row input[type=range]{flex:1;accent-color:var(--green-700)}
+.range-val{background:var(--green-700);color:white;padding:2px 10px;border-radius:8px;font-size:0.82rem;font-weight:600;min-width:56px;text-align:center}
+
+/* ── RECENT TOPICS ── */
+.recent-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.recent-label{font-size:0.78rem;color:var(--muted);font-weight:600}
+.recent-chip{background:white;border:1.5px solid var(--border);color:var(--green-700);
+  padding:3px 11px;border-radius:20px;font-size:0.78rem;cursor:pointer;transition:all 0.15s;font-weight:500}
+.recent-chip:hover{border-color:var(--green-600);background:var(--green-50)}
+
+/* ── BUTTONS ── */
+.btn{background:var(--green-700);color:white;border:none;border-radius:10px;padding:0.75rem 1.6rem;
+  font-weight:600;font-family:'Source Sans 3',sans-serif;cursor:pointer;font-size:0.95rem;
+  width:100%;margin-top:0.8rem;transition:all 0.2s;letter-spacing:0.2px;
+  display:flex;align-items:center;justify-content:center;gap:0.5rem}
+.btn:hover{background:var(--green-800);transform:translateY(-1px);box-shadow:0 4px 16px rgba(45,106,79,0.3)}
+.btn:disabled{background:#aaa;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-sm{padding:0.35rem 0.9rem;font-size:0.78rem;width:auto;margin-top:0;border-radius:7px}
+.btn-outline{background:transparent;color:var(--green-700);border:2px solid var(--green-700)}
+.btn-outline:hover{background:var(--green-50);transform:none;box-shadow:none}
+
+/* ── CARDS ── */
+.card{background:white;border-radius:var(--radius);padding:1.3rem 1.5rem;margin-bottom:1rem;
+  border-left:4px solid var(--green-600);box-shadow:var(--shadow);transition:box-shadow 0.2s;position:relative}
+.card:hover{box-shadow:0 6px 30px rgba(0,0,0,0.11)}
+.card h3{font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:0.5rem;color:var(--green-900)}
+.card p{font-size:0.9rem;color:#444;line-height:1.65}
+.card-actions{display:flex;gap:0.5rem;margin-top:0.8rem;flex-wrap:wrap;align-items:center}
+
+/* ── BADGES ── */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:700;letter-spacing:0.5px}
+.badge-passive{background:#fde8d8;color:#c0440a}
+.badge-active{background:#d8f0e8;color:#1a6640}
+.badge-constructive{background:#dce8fd;color:#1a3f80}
+.badge-interactive{background:#f0d8fd;color:#6a1a80}
+.badge-category{background:var(--green-100);color:var(--green-800);border:1px solid var(--green-200)}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:0.8rem;margin-bottom:1.2rem}
+@media(max-width:500px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.metric{background:white;border-radius:12px;padding:1rem;text-align:center;box-shadow:var(--shadow);border-top:3px solid var(--green-400)}
+.metric .val{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--green-800)}
+.metric .lbl{font-size:0.72rem;color:var(--muted);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
+
+/* ── ICAP ROW ── */
+.icap-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0.7rem;margin-bottom:1.2rem}
+@media(max-width:500px){.icap-row{grid-template-columns:repeat(2,1fr)}}
+.icap-box{border-radius:12px;padding:0.9rem 0.5rem;text-align:center;cursor:default;transition:transform 0.2s}
+.icap-box:hover{transform:scale(1.03)}
+.icap-box .num{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700}
+.icap-box .lbl{font-size:0.72rem;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-top:2px}
+.passive-box{background:#fde8d8;color:#c0440a}
+.active-box{background:#d8f0e8;color:#1a6640}
+.constructive-box{background:#dce8fd;color:#1a3f80}
+.interactive-box{background:#f0d8fd;color:#6a1a80}
+
+/* ── COGNITIVE LOAD METER ── */
+.cog-load-card{background:white;border-radius:var(--radius);padding:1.2rem 1.5rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.cog-load-title{font-weight:700;font-size:0.85rem;color:var(--green-800);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.8rem}
+.cog-bars{display:flex;flex-direction:column;gap:0.5rem}
+.cog-bar-row{display:flex;align-items:center;gap:0.7rem;font-size:0.8rem}
+.cog-bar-label{width:120px;font-weight:600;color:var(--muted);flex-shrink:0}
+.cog-bar-track{flex:1;height:8px;background:#eee;border-radius:4px;overflow:hidden}
+.cog-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.cog-bar-val{width:32px;text-align:right;font-weight:700;font-size:0.8rem}
+.load-low{background:#74c69d}.load-med{background:#f4a261}.load-high{background:#e76f51}
+.cog-note{font-size:0.78rem;color:var(--muted);margin-top:0.6rem;font-style:italic}
+
+/* ── SECTION TITLE ── */
+.section-title{font-family:'Playfair Display',serif;font-size:1.15rem;margin:1.4rem 0 0.7rem;
+  color:var(--green-900);border-bottom:2px solid var(--green-100);padding-bottom:0.4rem;
+  display:flex;align-items:center;gap:0.5rem}
+
+/* ── APPROVE ROW ── */
+.approve-row{display:flex;align-items:center;gap:0.5rem;margin-top:0.7rem}
+.approve-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--green-700);cursor:pointer}
+.approve-row label{margin:0;font-weight:500;font-size:0.84rem;text-transform:none;letter-spacing:0;cursor:pointer;color:var(--text)}
+
+/* ── PRACTICE Q CARDS ── */
+.q-card{background:white;border-radius:12px;padding:1rem 1.2rem;margin-bottom:0.7rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  border-top:3px solid #ddd;transition:box-shadow 0.2s}
+.q-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.1)}
+.q-card.easy{border-top-color:#74c69d}.q-card.medium{border-top-color:#f4a261}.q-card.hard{border-top-color:#e76f51}
+.diff-label{font-size:0.72rem;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:0.4rem}
+.easy .diff-label{color:#1a6640}.medium .diff-label{color:#7a5900}.hard .diff-label{color:#c0440a}
+
+/* ── RUBRIC ── */
+.rubric-row{margin-bottom:1.4rem;background:white;border-radius:12px;padding:1rem 1.2rem;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.rubric-row .r-name{font-weight:700;font-size:0.92rem;color:var(--green-800)}
+.rubric-row .r-desc{font-size:0.8rem;color:var(--muted);margin-bottom:0.6rem;margin-top:2px}
+.rubric-row input[type=range]{accent-color:var(--green-700);width:100%}
+.score-display{text-align:center;background:var(--green-50);border:2px solid var(--green-200);border-radius:var(--radius);padding:1.4rem;margin-top:1rem}
+.score-display .big{font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:700;color:var(--green-800)}
+.score-display .sub{font-size:0.88rem;color:var(--muted);margin-top:4px}
+
+/* ── LOADER ── */
+.loader{display:flex;flex-direction:column;align-items:center;padding:3rem;gap:1rem}
+.spinner-ring{width:52px;height:52px;position:relative}
+.spinner-ring:before,.spinner-ring:after{content:'';position:absolute;border-radius:50%;border:4px solid transparent}
+.spinner-ring:before{inset:0;border-top-color:var(--green-700);animation:spin 0.9s linear infinite}
+.spinner-ring:after{inset:6px;border-top-color:var(--green-400);animation:spin 0.6s linear infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-steps{display:flex;flex-direction:column;gap:0.3rem;align-items:center}
+.loader-step{font-size:0.82rem;color:var(--muted);transition:all 0.3s}
+.loader-step.active{color:var(--green-700);font-weight:600}
+.loader-step.done{color:var(--green-400)}
+
+/* ── EXPORT ── */
+.export-box{background:white;border-radius:var(--radius);padding:1.3rem;box-shadow:var(--shadow);
+  white-space:pre-wrap;font-size:0.76rem;font-family:'Courier New',monospace;
+  max-height:340px;overflow-y:auto;color:#333;border:1px solid var(--border);line-height:1.5}
+
+/* ── INFO BOX ── */
+.info-box{background:#e8f4fd;border:1px solid #b3d4f0;border-radius:10px;padding:1rem 1.2rem;
+  font-size:0.88rem;color:#1a3f80;margin-bottom:1rem}
+.hidden{display:none}
+
+/* ── PRINT ── */
+@media print{
+  header,.tabs,.btn,input,select,textarea,.card-actions,.approve-row{display:none!important}
+  .card,.cog-load-card,.q-card,.rubric-row{box-shadow:none;border:1px solid #ddd;break-inside:avoid}
+  body{background:white}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div>
+      <div class="logo">Lecture<span>AI</span></div>
+      <div class="header-sub">Human–AI Co-Orchestration · Omolola · University of Idaho</div>
+    </div>
+  </div>
+  <span class="version-badge">✦ v1.0 Final</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('builder')">📋 Lesson Builder</div>
+  <div class="tab" onclick="switchTab('student')">📚 Student Support</div>
+  <div class="tab" onclick="switchTab('rubric')">📊 Evaluation</div>
+  <div class="tab" onclick="switchTab('export')">📁 Export</div>
+</div>
+
+<div class="content">
+
+<!-- ══════════════ LESSON BUILDER ══════════════ -->
+<div id="builder" class="section active">
+
+  <!-- Recent topics -->
+  <div id="recentRow" class="recent-row hidden">
+    <span class="recent-label">Recent:</span>
+    <div id="recentChips"></div>
+  </div>
+
+  <div class="form-grid">
+
+    <!-- Topic with autocomplete -->
+    <div class="form-group full">
+      <label>Topic *</label>
+      <div class="autocomplete-wrapper">
+        <input id="topic" autocomplete="off" placeholder="e.g. Cloud Computing, Linear Regression…"
+               oninput="onTopicInput()" onkeydown="onTopicKey(event)" onfocus="onTopicInput()"/>
+        <div class="suggestions" id="suggestions"></div>
+      </div>
+      <div id="topicCategory" style="margin-top:0.4rem;font-size:0.78rem;color:var(--muted)"></div>
+    </div>
+
+    <!-- Learning objectives -->
+    <div class="form-group full">
+      <label>Learning Objectives *</label>
+      <textarea id="objectives" placeholder="e.g.&#10;1. Understand the core concepts&#10;2. Apply to real-world examples&#10;3. Evaluate different approaches"></textarea>
+      <div id="objSuggest" class="obj-suggest"></div>
+    </div>
+
+    <!-- Level + Style -->
+    <div class="form-group">
+      <label>Class Level</label>
+      <select id="level">
+        <option>Beginner</option><option selected>Intermediate</option><option>Advanced</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Teaching Style</label>
+      <select id="style">
+        <option>Lecture-based</option><option>Discussion-based</option>
+        <option>Project-based</option><option>Flipped</option>
+      </select>
+    </div>
+
+    <!-- Duration -->
+    <div class="form-group full">
+      <label>Duration</label>
+      <div class="range-row">
+        <input type="range" id="duration" min="30" max="180" value="75" step="5" oninput="document.getElementById('durVal').textContent=this.value+' min'"/>
+        <div class="range-val" id="durVal">75 min</div>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="btn" id="generateBtn" onclick="generateLesson()">
+    <span id="btnIcon">✦</span> <span id="btnText">Generate Lesson Plan</span>
+  </button>
+
+  <!-- LOADER -->
+  <div id="loadingSpinner" class="hidden loader">
+    <div class="spinner-ring"></div>
+    <div class="loader-steps" id="loaderSteps"></div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div id="planOutput" class="hidden">
+
+    <div class="section-title" style="margin-top:1.4rem">📊 Lesson Overview</div>
+    <div class="metrics">
+      <div class="metric"><div class="val" id="mTopic">—</div><div class="lbl">Topic</div></div>
+      <div class="metric"><div class="val" id="mLevel">—</div><div class="lbl">Level</div></div>
+      <div class="metric"><div class="val" id="mDur">—</div><div class="lbl">Duration</div></div>
+      <div class="metric"><div class="val" id="mStyle">—</div><div class="lbl">Style</div></div>
+    </div>
+
+    <div class="section-title">🏷️ ICAP Engagement Coverage</div>
+    <div class="icap-row">
+      <div class="icap-box passive-box"><div class="num" id="cntPassive">—</div><div class="lbl">Passive</div></div>
+      <div class="icap-box active-box"><div class="num" id="cntActive">—</div><div class="lbl">Active</div></div>
+      <div class="icap-box constructive-box"><div class="num" id="cntConstructive">—</div><div class="lbl">Constructive</div></div>
+      <div class="icap-box interactive-box"><div class="num" id="cntInteractive">—</div><div class="lbl">Interactive</div></div>
+    </div>
+
+    <!-- Cognitive Load Meter -->
+    <div class="section-title">🧠 Cognitive Load Analysis</div>
+    <div class="cog-load-card">
+      <div class="cog-load-title">Estimated Load Distribution</div>
+      <div class="cog-bars" id="cogBars"></div>
+      <div class="cog-note" id="cogNote"></div>
+    </div>
+
+    <div class="section-title">📐 Lecture Outline
+      <button class="btn btn-sm btn-outline" onclick="regenerateSection('outline')">↻ Regenerate</button>
+    </div>
+    <div id="outlineCards"></div>
+
+    <div class="section-title">💡 Examples & Analogies
+      <button class="btn btn-sm btn-outline" onclick="regenerateSection('analogies')">↻ Regenerate</button>
+    </div>
+    <div id="analogyCards"></div>
+
+    <div class="section-title">🎯 In-Class Activity Prompts
+      <button class="btn btn-sm btn-outline" onclick="regenerateSection('activities')">↻ Regenerate</button>
+    </div>
+    <div id="activityCards"></div>
+
+    <div class="section-title">🪞 Reflection Questions</div>
+    <div id="reflectionList"></div>
+
+  </div>
+</div>
+
+<!-- ══════════════ STUDENT SUPPORT ══════════════ -->
+<div id="student" class="section">
+  <div id="noplan1" class="info-box">⚠️ Generate a lesson plan first in the Lesson Builder tab.</div>
+  <div id="studentContent" class="hidden">
+    <div class="section-title">📖 Plain-Language Micro-Explanation</div>
+    <div class="card"><p id="microExp"></p></div>
+    <div class="section-title">✏️ Practice Questions</div>
+    <div id="practiceQs"></div>
+    <div class="section-title">🧠 Self-Regulated Learning Prompts</div>
+    <div id="srlCards"></div>
+  </div>
+</div>
+
+<!-- ══════════════ EVALUATION ══════════════ -->
+<div id="rubric" class="section">
+  <div id="noplan2" class="info-box">⚠️ Generate a lesson plan first in the Lesson Builder tab.</div>
+  <div id="rubricContent" class="hidden">
+    <p style="font-size:0.88rem;color:var(--muted);margin-bottom:1rem">Score the generated output on each criterion from 1 (poor) to 5 (excellent).</p>
+    <div id="rubricRows"></div>
+    <div class="score-display">
+      <div class="big" id="totalScore">—</div>
+      <div class="sub"><span id="totalPct">—</span> &nbsp;·&nbsp; <span id="rating">—</span></div>
+    </div>
+    <button class="btn" style="margin-top:1rem" onclick="saveRubric()">💾 Save Evaluation</button>
+  </div>
+</div>
+
+<!-- ══════════════ EXPORT ══════════════ -->
+<div id="export" class="section">
+  <div id="noplan3" class="info-box">⚠️ Generate a lesson plan first in the Lesson Builder tab.</div>
+  <div id="exportContent" class="hidden">
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+      <button class="btn" style="flex:1;min-width:160px" onclick="downloadTxt()">⬇️ Download as Text</button>
+      <button class="btn btn-outline" style="flex:1;min-width:160px" onclick="window.print()">🖨️ Print / Save PDF</button>
+    </div>
+    <div class="section-title" style="margin-top:1.2rem">Preview</div>
+    <div class="export-box" id="exportPreview"></div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<script>
+// ═══════════════════════════════════════════════════════
+// DATA: 80+ topic suggestions with categories
+// ═══════════════════════════════════════════════════════
+const TOPICS = [
+  // Statistics
+  {t:"Linear Regression",c:"stats"},{t:"Logistic Regression",c:"stats"},{t:"Hypothesis Testing",c:"stats"},
+  {t:"Probability Distributions",c:"stats"},{t:"Bayesian Statistics",c:"stats"},{t:"Analysis of Variance (ANOVA)",c:"stats"},
+  {t:"Correlation and Causation",c:"stats"},{t:"Confidence Intervals",c:"stats"},{t:"Time Series Analysis",c:"stats"},
+  {t:"Statistical Sampling Methods",c:"stats"},{t:"Regression Diagnostics",c:"stats"},{t:"Non-parametric Tests",c:"stats"},
+  // ML
+  {t:"Decision Trees",c:"ml"},{t:"Random Forests",c:"ml"},{t:"Neural Networks",c:"ml"},
+  {t:"Support Vector Machines",c:"ml"},{t:"K-Nearest Neighbours",c:"ml"},{t:"Gradient Boosting",c:"ml"},
+  {t:"Clustering Algorithms",c:"ml"},{t:"Dimensionality Reduction",c:"ml"},{t:"Reinforcement Learning",c:"ml"},
+  {t:"Transfer Learning",c:"ml"},{t:"Natural Language Processing",c:"ml"},{t:"Computer Vision",c:"ml"},
+  {t:"Model Evaluation and Validation",c:"ml"},{t:"Overfitting and Underfitting",c:"ml"},{t:"Feature Engineering",c:"ml"},
+  {t:"Ensemble Methods",c:"ml"},{t:"Explainable AI (XAI)",c:"ml"},
+  // Data
+  {t:"Data Cleaning",c:"data"},{t:"Missing Value Imputation",c:"data"},{t:"Data Wrangling with Pandas",c:"data"},
+  {t:"Exploratory Data Analysis",c:"data"},{t:"Feature Selection",c:"data"},{t:"Data Pipelines",c:"data"},
+  {t:"ETL Processes",c:"data"},{t:"Data Quality Assessment",c:"data"},{t:"Outlier Detection",c:"data"},
+  // Viz
+  {t:"Data Visualisation Principles",c:"viz"},{t:"Matplotlib and Seaborn",c:"viz"},{t:"Interactive Dashboards",c:"viz"},
+  {t:"Storytelling with Data",c:"viz"},{t:"Chart Selection",c:"viz"},{t:"Tableau Fundamentals",c:"viz"},
+  // Programming
+  {t:"Python for Data Science",c:"prog"},{t:"NumPy and Pandas",c:"prog"},{t:"SQL Fundamentals",c:"prog"},
+  {t:"SQL Joins and Aggregations",c:"prog"},{t:"Python Loops and Functions",c:"prog"},{t:"Object-Oriented Programming",c:"prog"},
+  {t:"API Integration",c:"prog"},{t:"Web Scraping",c:"prog"},{t:"Version Control with Git",c:"prog"},
+  {t:"Jupyter Notebooks",c:"prog"},{t:"R Programming",c:"prog"},
+  // Ethics
+  {t:"AI Ethics",c:"ethics"},{t:"Bias and Fairness in AI",c:"ethics"},{t:"Data Privacy",c:"ethics"},
+  {t:"Responsible AI",c:"ethics"},{t:"Algorithmic Accountability",c:"ethics"},
+  // Cloud & DB
+  {t:"Cloud Computing",c:"cloud"},{t:"AWS for Data Science",c:"cloud"},{t:"Google Cloud Platform",c:"cloud"},
+  {t:"Azure Machine Learning",c:"cloud"},{t:"Big Data with Spark",c:"cloud"},{t:"Hadoop Ecosystem",c:"cloud"},
+  {t:"Serverless Architecture",c:"cloud"},{t:"Docker and Containerisation",c:"cloud"},
+  {t:"Database Design",c:"db"},{t:"NoSQL Databases",c:"db"},{t:"MongoDB",c:"db"},
+  {t:"Data Warehousing",c:"db"},{t:"Graph Databases",c:"db"},{t:"Redis and Caching",c:"db"},
+];
+
+const CAT_LABELS = {
+  stats:"Statistics",ml:"Machine Learning",data:"Data Engineering",
+  viz:"Visualisation",prog:"Programming",ethics:"Ethics",cloud:"Cloud / Big Data",db:"Databases"
+};
+const CAT_CLASSES = {
+  stats:"cat-stats",ml:"cat-ml",data:"cat-data",viz:"cat-viz",
+  prog:"cat-prog",ethics:"cat-ethics",cloud:"cat-cloud",db:"cat-db"
+};
+
+// ─── Objective suggestions per category ───────────────────────────────────────
+const OBJ_SUGGESTIONS = {
+  stats:[
+    "Understand and interpret statistical outputs",
+    "Apply the concept to a real dataset",
+    "Identify assumptions and when they are violated",
+    "Compare this method with at least one alternative",
+  ],
+  ml:[
+    "Explain how the algorithm learns from data",
+    "Implement a basic version in Python",
+    "Evaluate model performance using appropriate metrics",
+    "Identify overfitting and apply a remedy",
+  ],
+  data:[
+    "Identify common data quality issues",
+    "Apply appropriate cleaning techniques",
+    "Document all transformation decisions",
+    "Assess the impact of cleaning on downstream analysis",
+  ],
+  viz:[
+    "Choose an appropriate chart type for a given dataset",
+    "Apply visual design principles to improve clarity",
+    "Build an interactive visualisation",
+    "Critique a misleading chart and suggest improvements",
+  ],
+  prog:[
+    "Write clean, readable code applying the concept",
+    "Debug a broken implementation",
+    "Explain the logic to a non-technical audience",
+    "Extend the solution to a new use case",
+  ],
+  ethics:[
+    "Identify ethical risks in a given scenario",
+    "Apply a framework for evaluating fairness",
+    "Propose mitigation strategies",
+    "Reflect on personal responsibility as a data practitioner",
+  ],
+  cloud:[
+    "Explain the architecture and key components",
+    "Compare cloud and on-premise solutions",
+    "Set up a basic pipeline using the technology",
+    "Identify cost and performance trade-offs",
+  ],
+  db:[
+    "Design a schema appropriate for the use case",
+    "Write queries to retrieve and transform data",
+    "Compare with at least one alternative database type",
+    "Explain indexing and query optimisation",
+  ],
+};
+
+// ═══════════════════════════════════════════════════════
+// AUTOCOMPLETE
+// ═══════════════════════════════════════════════════════
+let selectedSuggestionIndex = -1;
+let filteredSuggestions = [];
+
+function onTopicInput(){
+  const val = document.getElementById("topic").value.trim();
+  const box = document.getElementById("suggestions");
+  if(val.length < 1){ box.classList.remove("show"); return; }
+
+  filteredSuggestions = TOPICS.filter(t=>
+    t.t.toLowerCase().includes(val.toLowerCase())
+  ).slice(0,8);
+
+  if(!filteredSuggestions.length){ box.classList.remove("show"); updateCategoryBadge(""); return; }
+
+  box.innerHTML = filteredSuggestions.map((t,i)=>{
+    const hl = t.t.replace(new RegExp(`(${escapeReg(val)})`, 'gi'),
+      '<span class="suggestion-highlight">$1</span>');
+    return `<div class="suggestion-item" onmousedown="selectSuggestion(${i})" id="sug${i}">
+      ${hl}<span class="cat ${CAT_CLASSES[t.c]}">${CAT_LABELS[t.c]}</span></div>`;
+  }).join("");
+  selectedSuggestionIndex = -1;
+  box.classList.add("show");
+  updateCategoryBadge(val);
+}
+
+function onTopicKey(e){
+  const box = document.getElementById("suggestions");
+  if(!box.classList.contains("show")) return;
+  if(e.key==="ArrowDown"){
+    e.preventDefault();
+    selectedSuggestionIndex = Math.min(selectedSuggestionIndex+1, filteredSuggestions.length-1);
+    highlightSuggestion();
+  } else if(e.key==="ArrowUp"){
+    e.preventDefault();
+    selectedSuggestionIndex = Math.max(selectedSuggestionIndex-1, -1);
+    highlightSuggestion();
+  } else if(e.key==="Enter" || e.key==="Tab"){
+    if(selectedSuggestionIndex >= 0){ e.preventDefault(); selectSuggestion(selectedSuggestionIndex); }
+    else { box.classList.remove("show"); }
+  } else if(e.key==="Escape"){
+    box.classList.remove("show");
+  }
+}
+
+function highlightSuggestion(){
+  document.querySelectorAll(".suggestion-item").forEach((el,i)=>{
+    el.classList.toggle("active", i===selectedSuggestionIndex);
+  });
+}
+
+function selectSuggestion(i){
+  const t = filteredSuggestions[i];
+  document.getElementById("topic").value = t.t;
+  document.getElementById("suggestions").classList.remove("show");
+  updateCategoryBadge(t.t);
+  showObjSuggestions(t.c);
+}
+
+function updateCategoryBadge(val){
+  const el = document.getElementById("topicCategory");
+  const match = TOPICS.find(t=>t.t.toLowerCase()===val.toLowerCase());
+  if(match){
+    el.innerHTML = `Detected category: <strong style="color:var(--green-700)">${CAT_LABELS[match.c]}</strong>`;
+    showObjSuggestions(match.c);
+  } else {
+    el.innerHTML = "";
+  }
+}
+
+function showObjSuggestions(cat){
+  const sugs = OBJ_SUGGESTIONS[cat];
+  if(!sugs){ document.getElementById("objSuggest").innerHTML=""; return; }
+  document.getElementById("objSuggest").innerHTML =
+    `<span style="font-size:0.78rem;color:var(--muted);font-weight:600;width:100%;display:block;margin-bottom:2px">Suggested objectives (click to add):</span>` +
+    sugs.map((s,i)=>`<span class="obj-chip" onclick="addObjective('${s.replace(/'/g,"\\'")}',${i})">${s}</span>`).join("");
+}
+
+function addObjective(text, idx){
+  const el = document.getElementById("objectives");
+  const current = el.value.trim();
+  const num = (current.match(/^\d+\./mg)||[]).length + 1;
+  el.value = (current ? current + "\n" : "") + `${num}. ${text}`;
+  // Mark chip as used
+  document.querySelectorAll(".obj-chip")[idx].style.opacity="0.4";
+}
+
+function escapeReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+// Close dropdown on outside click
+document.addEventListener("click", e=>{
+  if(!e.target.closest(".autocomplete-wrapper"))
+    document.getElementById("suggestions").classList.remove("show");
+});
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let currentPlan = null;
+let recentTopics = [];
+
+// ═══════════════════════════════════════════════════════
+// CONTENT ENGINE
+// ═══════════════════════════════════════════════════════
+function detectCategory(topic){
+  const tl = topic.toLowerCase();
+  if(/regression|correlation|distribution|probability|hypothesis|variance|anova|bayesian|confidence|sampling|parametric/i.test(tl)) return "stats";
+  if(/machine learning|neural|classification|clustering|decision tree|random forest|svm|gradient|boosting|overfitting|feature engineering|transfer|nlp|natural language|computer vision|explainable|xai|reinforcement/i.test(tl)) return "ml";
+  if(/data clean|missing|wrangling|pandas|etl|pipeline|data quality|outlier|imputation|exploratory|eda/i.test(tl)) return "data";
+  if(/visuali|plot|chart|graph|matplotlib|seaborn|tableau|dashboard|storytelling/i.test(tl)) return "viz";
+  if(/cloud|aws|azure|gcp|spark|hadoop|serverless|docker|big data/i.test(tl)) return "cloud";
+  if(/ethics|bias|fairness|privacy|responsible|accountability/i.test(tl)) return "ethics";
+  if(/sql|database|nosql|mongo|redis|warehouse|schema|query/i.test(tl)) return "db";
+  return "prog";
+}
+
+function buildPlan(topic, objectives, level, duration, style){
+  const cat = detectCategory(topic);
+  const t = topic;
+
+  const intro    = Math.max(5,  Math.round(duration*0.12));
+  const concept  = Math.max(10, Math.round(duration*0.33));
+  const activity = Math.max(10, Math.round(duration*0.28));
+  const peer     = Math.max(5,  Math.round(duration*0.12));
+  const wrapup   = Math.max(5,  duration - intro - concept - activity - peer);
+
+  const styleDesc = {
+    "Lecture-based":"structured walkthrough with worked examples",
+    "Discussion-based":"open questions that invite students to reason aloud",
+    "Project-based":"hands-on mini-project applied to real data",
+    "Flipped":"in-class application of concepts previewed before class",
+  }[style] || "interactive instruction";
+
+  const HOOKS = {
+    stats:`Present a striking real-world claim — e.g. a correlation that seems obviously true but isn't — and ask students how they would test it rigorously. This grounds "${t}" in genuine scientific inquiry from the first minute.`,
+    ml:`Display two scatter plots side by side: one where a pattern is obvious, one where it's noise. Ask: which can a machine learn from? Use ${styleDesc} to frame what problem "${t}" actually solves.`,
+    data:`Project a deliberately messy dataset on screen — duplicates, blanks, inconsistent formats. Ask: "What problems do you see? What would break if you analysed this as-is?" This makes "${t}" feel necessary, not procedural.`,
+    viz:`Show two charts of identical data — one honest, one misleading. Ask students what's different and why it matters. Use ${styleDesc} to frame "${t}" as a communication skill, not just a technical one.`,
+    cloud:`Open with a question: "What happens when your dataset is too large to fit on your laptop?" Use ${styleDesc} to position "${t}" as the solution to a real scalability constraint students will face.`,
+    ethics:`Start with a real case study — a predictive system that caused documented harm. Ask: "Who is responsible? What should have been done differently?" "${t}" becomes a framework for answering those questions.`,
+    db:`Show a spreadsheet that has become unmaintainable at scale — repeated data, broken lookups. Ask: "How would you redesign this?" Use ${styleDesc} to motivate why "${t}" exists.`,
+    prog:`Show two code solutions to the same problem — one using "${t}", one without. Ask: "Which is clearer? Which would you rather maintain in a year?" Use ${styleDesc} to set up the lesson.`,
+  };
+
+  const CONCEPTS = {
+    stats:`Build from the intuitive question to the formal definition. Show the formula for "${t}", then immediately translate every symbol into plain English using a real dataset. For ${level} students: never show the full formalism before the intuition is established.`,
+    ml:`Walk through the algorithm step-by-step using a toy dataset small enough to trace by hand. Show input → transformation → output at each stage. For ${level} students: connect every mathematical step back to what it means for the prediction.`,
+    data:`Demonstrate the transformation pipeline live on a real dirty dataset. Narrate every decision — especially what gets dropped, imputed, or flagged and why. For ${level} students: emphasise that there is rarely one "correct" cleaning decision.`,
+    viz:`Cover design principles alongside the code. Show a bad version of each chart first, then improve it in real time explaining each change. For ${level} students: make clear that "${t}" is about communication, not just aesthetics.`,
+    cloud:`Explain the architecture with a clear diagram: what runs where, who pays for what, and how data flows. Use a cost comparison to show when cloud solutions are and are not appropriate. For ${level} students: avoid jargon until concepts are established.`,
+    ethics:`Present a structured framework for ethical analysis of "${t}". Use at least two real case studies with different outcomes. For ${level} students: explicitly show that ethical questions require structured reasoning, not just intuition.`,
+    db:`Explain the data model and key operations for "${t}" using a relatable schema (e.g. a university course registration system). For ${level} students: compare to a spreadsheet equivalent to anchor new concepts to something familiar.`,
+    prog:`Build the concept incrementally — start with the smallest working example, then grow it. Annotate every line. For ${level} students: never show the full solution before they have attempted the core part themselves.`,
+  };
+
+  const outline = [
+    {segment:"Introduction & Hook",     duration_min:intro,    icap:"Active",        description:HOOKS[cat]},
+    {segment:"Core Concept Explanation",duration_min:concept,  icap:"Passive",       description:CONCEPTS[cat]},
+    {segment:"Guided In-Class Activity",duration_min:activity, icap:"Constructive",  description:`Students apply "${t}" to a structured task in pairs. Each pair must produce both an output and a written justification of their approach. The justification counts as much as the result — this enforces genuine understanding rather than mechanical completion.`},
+    {segment:"Peer Discussion & Debate",duration_min:peer,     icap:"Interactive",   description:`Pose a conceptual tension: when does "${t}" fail, produce misleading results, or require a different approach entirely? Groups defend opposing positions, then the class synthesises a shared answer. Each group must produce one insight they did not have before the discussion.`},
+    {segment:"Wrap-Up & Reflection",    duration_min:wrapup,   icap:"Constructive",  description:`Instructor summarises three key takeaways. Students write a 2-sentence exit ticket: (1) the most important thing they learned about "${t}" today, and (2) one question they still have. Exit tickets are collected and used to open the next class.`},
+  ];
+
+  const ANALOGIES = {
+    stats:[
+      `Beginner: "${t}" is like a courtroom — you start by assuming there's no effect (innocent until proven guilty) and only change your mind when the evidence is overwhelming.`,
+      `Visual: Imagine a seesaw with your data on one side and chance on the other. "${t}" tells you which way the seesaw tips, and by how much.`,
+      `Social science: What a historian does when weighing conflicting primary sources — asking "how confident am I in this conclusion?" — is exactly what "${t}" formalises.`,
+    ],
+    ml:[
+      `Beginner: "${t}" learns the way a child learns to recognise animals — not from a rulebook, but from seeing thousands of examples until patterns become instinctive.`,
+      `Visual: Imagine drawing the best possible line through a cloud of scattered dots. "${t}" is the algorithm that finds that line — even when the data is messy.`,
+      `Engineering: A spam filter is a perfect real example of "${t}" in production. It doesn't know what spam is in the abstract — it learned from millions of labelled emails.`,
+    ],
+    data:[
+      `Beginner: "${t}" is like editing a rough draft. You're not changing what the author meant — you're fixing the typos, filling the gaps, and cutting the parts that don't belong.`,
+      `Visual: A chef doing mise en place before cooking. "${t}" is the prep work — washing vegetables, discarding bad produce, organising ingredients — before anything goes on the stove.`,
+      `Social science: What a researcher does when deciding which survey responses are valid, which are ambiguous, and which should be excluded — that systematic judgment is exactly what "${t}" operationalises.`,
+    ],
+    viz:[
+      `Beginner: "${t}" is like choosing which words to use in a sentence. The right choice makes meaning clear; the wrong choice creates confusion or — worse — deception.`,
+      `Design: A map is a perfect metaphor for "${t}". Every map leaves something out by necessity. The skill is in choosing what to show and what to omit so the reader gets to the right destination.`,
+      `Journalism: The best data journalists treat "${t}" the way a photographer treats light — as something to be carefully controlled to reveal truth rather than distort it.`,
+    ],
+    cloud:[
+      `Beginner: "${t}" is like renting a professional kitchen instead of cooking at home. You only pay for the time you use it, and the equipment is far better than anything you could own.`,
+      `Visual: Think of "${t}" as electricity. You don't generate your own — you plug into an infrastructure built for scale, and you pay for what you consume.`,
+      `Business: A startup using "${t}" is like a restaurant using a commercial delivery platform rather than building its own logistics network. The trade-off between control and convenience is the same.`,
+    ],
+    ethics:[
+      `Beginner: "${t}" is like the engineering principle of "first, do no harm." Every decision in the design of an AI system is a choice about whose interests to prioritise.`,
+      `Historical: Many of the debates in "${t}" echo older debates about scientific responsibility — the scientists who built atomic weapons also had to confront questions about what their work would enable.`,
+      `Design: An ethical review process for AI is like a structural safety inspection for a building. It doesn't prevent all failures — but it makes certain catastrophic failures far less likely.`,
+    ],
+    db:[
+      `Beginner: "${t}" is like a well-organised filing system. The difference between a pile of documents and a properly indexed archive is the difference between a mess and a database.`,
+      `Visual: Think of "${t}" as plumbing. Nobody sees it, nobody thinks about it when it works — but when it's designed badly, everything downstream breaks.`,
+      `Business: Every time you use a search engine, book a flight, or buy something online, you're benefiting from "${t}" operating correctly at enormous scale.`,
+    ],
+    prog:[
+      `Beginner: "${t}" is like a recipe that can be reused. You write the steps once, and anyone — including your future self — can follow them exactly without needing to understand every detail.`,
+      `Visual: Think of "${t}" as a blueprint rather than a photograph. A photograph shows one instance. A blueprint can be used to build the same thing a thousand times.`,
+      `Engineering: Every physical machine is built from reusable components. "${t}" is how software achieves the same — reliable, interchangeable building blocks.`,
+    ],
+  };
+
+  const ACTIVITIES = {
+    stats:[
+      {title:"Think-Pair-Share",icap:"Interactive",prompt:`Two researchers report opposite conclusions from the same dataset using "${t}". With your partner, identify at least two legitimate reasons this could happen. Be ready to defend your reasoning.`},
+      {title:"Error Spotting",icap:"Constructive",prompt:`The instructor presents a published analysis that misapplies "${t}" in a subtle but important way. Identify the error, explain why it matters for the conclusion, and propose the correct approach.`},
+      {title:"Concept Mapping",icap:"Constructive",prompt:`In 5 minutes, map how "${t}" connects to at least three other concepts from this course. Label each arrow with the relationship type (e.g. "assumes", "produces", "is validated by").`},
+    ],
+    ml:[
+      {title:"Think-Pair-Share",icap:"Interactive",prompt:`Two models: Model A has 96% training accuracy and 61% test accuracy. Model B has 81% training accuracy and 79% test accuracy. With your partner, decide which to deploy — and for what type of problem would you reverse your answer?`},
+      {title:"Error Spotting",icap:"Constructive",prompt:`The instructor presents a "${t}" implementation with a data leakage bug — training data has contaminated the test set. Identify where the leak occurs, explain what it inflates, and fix the pipeline.`},
+      {title:"Concept Mapping",icap:"Constructive",prompt:`Map the full learning pipeline for "${t}": from raw data to deployed prediction. Identify at least two decision points where a wrong choice would degrade performance. Label each point with what could go wrong.`},
+    ],
+    data:[
+      {title:"Think-Pair-Share",icap:"Interactive",prompt:`Your dataset has a column with 35% missing values. With your partner, decide: drop rows, impute with mean, impute with median, or flag as a feature? Your answer may depend on the downstream task — explain your reasoning for two different scenarios.`},
+      {title:"Error Spotting",icap:"Constructive",prompt:`The instructor shows a cleaned dataset that looks correct but contains a subtle error in the "${t}" process — a transformation was applied after a split, introducing leakage. Find it, explain its impact, and describe the correct order of operations.`},
+      {title:"Concept Mapping",icap:"Constructive",prompt:`Map the full "${t}" pipeline for a given dataset. At each step, identify: what could go wrong, how you would detect it, and how you would document your decision for reproducibility.`},
+    ],
+  };
+  const defaultActs = [
+    {title:"Think-Pair-Share",icap:"Interactive",prompt:`Identify a scenario where "${t}" would be the wrong tool to use. With your partner, explain what you would use instead and why. Be ready to defend your reasoning to the class.`},
+    {title:"Error Spotting",icap:"Constructive",prompt:`The instructor presents a flawed application of "${t}". Identify the error, explain why it matters for the conclusion, and propose the correct approach in one clear paragraph.`},
+    {title:"Concept Mapping",icap:"Constructive",prompt:`Map how "${t}" connects to at least two other topics from this course. For each connection, write a sentence explaining the relationship and give one concrete example.`},
+  ];
+
+  const activities = ACTIVITIES[cat] || defaultActs;
+
+  const reflections = [
+    `In your own words, what is the core purpose of "${t}"? What problem would remain unsolved without it?`,
+    `What is one thing about "${t}" that surprised you today or that you understood differently than expected?`,
+    `Describe a real dataset or project where applying "${t}" correctly would significantly change the outcome.`,
+    `What is the most important limitation of "${t}" that a practitioner must keep in mind?`,
+  ];
+
+  const microExps = {
+    stats:`"${t}" is a way of measuring patterns in data with enough rigour to distinguish real effects from random chance. Think of it as a formalised version of asking: "How surprised should I be by this result?" For a ${level} student, the key insight is that the same data can tell different stories depending on which questions you ask — and "${t}" helps you ask the right ones.`,
+    ml:`"${t}" allows computers to discover patterns from examples rather than following explicit rules. Instead of programming every decision, you show the algorithm many labelled instances and let it find the underlying structure. The critical question is always: what is the algorithm optimising for, and does that align with your actual goal?`,
+    data:`"${t}" is the process of transforming raw, imperfect data into a form that can support reliable analysis. Real-world data is almost always incomplete, inconsistent, or incorrectly formatted — and every decision you make in cleaning it is a modelling decision with consequences for your conclusions.`,
+    viz:`"${t}" is the discipline of translating data into visual forms that communicate truth clearly and honestly. Every design choice — colour, scale, chart type, what to include and what to omit — is an argument about what matters. The goal is not beauty but clarity and accuracy.`,
+    cloud:`"${t}" provides on-demand computing infrastructure that scales with your needs and is managed by a provider rather than your own team. The core trade-off is between control and convenience — and understanding when that trade-off is worth making is the essential skill.`,
+    ethics:`"${t}" is a framework for reasoning about the social consequences of data and AI systems. It asks: who benefits, who is harmed, who is accountable, and what obligations does a practitioner have before, during, and after deployment? It transforms good intentions into structured practice.`,
+    db:`"${t}" is a system for storing and retrieving structured data in a way that is reliable, efficient, and maintainable at scale. The design decisions made when setting up a database determine what questions you can ask of your data — and how quickly you can get answers.`,
+    prog:`"${t}" is a fundamental building block of computational thinking — a reusable, composable way of solving a class of problems. Understanding it deeply means being able to recognise when it applies, when it doesn't, and how to adapt it to new situations you haven't seen before.`,
+  };
+
+  const practiceQs = [
+    {difficulty:"Easy",    question:`Define "${t}" in one sentence using your own words — no technical jargon.`,    hint:"Focus on the purpose: what problem does it solve for the person using it?"},
+    {difficulty:"Easy",    question:`Give one concrete real-world example where "${t}" is actively used. Name the input, the process, and the output.`, hint:"Think about technology you use every day."},
+    {difficulty:"Medium",  question:`What is the most important assumption "${t}" makes about the data or context? What breaks when that assumption is violated?`, hint:"Every method has a failure mode — finding it shows deep understanding."},
+    {difficulty:"Medium",  question:`Compare "${t}" with one reasonable alternative. When would you choose each, and what are the trade-offs?`, hint:"Think about accuracy, interpretability, computational cost, and data requirements."},
+    {difficulty:"Hard",    question:`Design a complete end-to-end study using "${t}". Specify: data source, pre-processing steps, application of "${t}", evaluation metric, and how you would interpret the result to a non-technical stakeholder.`, hint:"Think about the full pipeline. Each step is a decision with consequences."},
+    {difficulty:"Hard",    question:`What could go wrong if "${t}" is applied carelessly in a high-stakes domain such as healthcare, hiring, or criminal justice? Propose three concrete safeguards.`, hint:"Think about bias, transparency, accountability, and what a failure would look like."},
+  ];
+
+  const srlPrompts = [
+    `Before you begin: Write down three things you already believe about "${t}" — even if uncertain. Activating prior knowledge makes new information stick.`,
+    `During study: Every 10 minutes, pause and ask: "Can I explain what I just read without looking?" If not, that paragraph needs another pass — not the next one.`,
+    `After practice: Try to teach today's core concept to someone else. The moment you get stuck is the exact thing to review before the next class.`,
+    `Planning: What was hardest about "${t}" today? Write a two-sentence plan for how you will address that gap before the next session.`,
+  ];
+
+  return {
+    topic:t, objectives, level, duration, style, category:cat,
+    generatedAt: new Date().toLocaleString(),
+    outline, analogies:ANALOGIES[cat]||ANALOGIES.prog,
+    activities, reflections,
+    student:{ micro_explanation:microExps[cat]||microExps.prog, practice_questions:practiceQs, srl_prompts:srlPrompts }
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+// GENERATE
+// ═══════════════════════════════════════════════════════
+async function generateLesson(){
+  const topic      = document.getElementById("topic").value.trim();
+  const objectives = document.getElementById("objectives").value.trim();
+  if(!topic||!objectives){alert("Please fill in Topic and Learning Objectives.");return;}
+
+  const level    = document.getElementById("level").value;
+  const duration = parseInt(document.getElementById("duration").value);
+  const style    = document.getElementById("style").value;
+
+  document.getElementById("generateBtn").disabled=true;
+  document.getElementById("btnIcon").textContent="⏳";
+  document.getElementById("btnText").textContent="Generating…";
+  document.getElementById("loadingSpinner").classList.remove("hidden");
+  document.getElementById("planOutput").classList.add("hidden");
+
+  const steps=[
+    "Reading topic and detecting subject category…",
+    "Applying ICAP framework to segment design…",
+    "Generating domain-specific analogies…",
+    "Designing activity prompts and reflection questions…",
+    "Building student support materials…",
+    "Calculating cognitive load distribution…",
+    "Finalising lesson plan…"
+  ];
+  const stepsEl=document.getElementById("loaderSteps");
+  stepsEl.innerHTML=steps.map((s,i)=>`<div class="loader-step" id="lstep${i}">${s}</div>`).join("");
+
+  for(let i=0;i<steps.length;i++){
+    if(i>0) document.getElementById(`lstep${i-1}`).classList.replace("active","done");
+    document.getElementById(`lstep${i}`).classList.add("active");
+    await sleep(380);
+  }
+
+  currentPlan = buildPlan(topic, objectives, level, duration, style);
+
+  // Update recent topics
+  recentTopics = [topic, ...recentTopics.filter(t=>t!==topic)].slice(0,4);
+  renderRecentTopics();
+
+  renderLesson(currentPlan);
+
+  document.getElementById("generateBtn").disabled=false;
+  document.getElementById("btnIcon").textContent="✦";
+  document.getElementById("btnText").textContent="Generate Lesson Plan";
+  document.getElementById("loadingSpinner").classList.add("hidden");
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ═══════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════
+function badge(icap){
+  const cls={Passive:"passive",Active:"active",Constructive:"constructive",Interactive:"interactive"}[icap]||"active";
+  return `<span class="badge badge-${cls}">${icap}</span>`;
+}
+
+function renderRecentTopics(){
+  if(!recentTopics.length)return;
+  document.getElementById("recentRow").classList.remove("hidden");
+  document.getElementById("recentChips").innerHTML =
+    recentTopics.map(t=>`<span class="recent-chip" onclick="loadRecentTopic('${t.replace(/'/g,"\\'")}')">⏱ ${t}</span>`).join("");
+}
+
+function loadRecentTopic(t){
+  document.getElementById("topic").value=t;
+  updateCategoryBadge(t);
+}
+
+function renderLesson(plan){
+  const t=plan.topic;
+  document.getElementById("mTopic").textContent = t.length>13?t.substring(0,13)+"…":t;
+  document.getElementById("mLevel").textContent  = plan.level;
+  document.getElementById("mDur").textContent    = plan.duration+" min";
+  document.getElementById("mStyle").textContent  = plan.style.split("-")[0];
+
+  // ICAP counts
+  const c={Passive:0,Active:0,Constructive:0,Interactive:0};
+  [...plan.outline,...plan.activities].forEach(x=>{if(c[x.icap]!==undefined)c[x.icap]++;});
+  document.getElementById("cntPassive").textContent     =c.Passive;
+  document.getElementById("cntActive").textContent      =c.Active;
+  document.getElementById("cntConstructive").textContent=c.Constructive;
+  document.getElementById("cntInteractive").textContent =c.Interactive;
+
+  // Cognitive load
+  renderCogLoad(plan);
+
+  // Outline
+  document.getElementById("outlineCards").innerHTML = plan.outline.map((seg,i)=>`
+    <div class="card" style="animation-delay:${i*0.07}s">
+      <h3>${i+1}. ${seg.segment} <small style="font-size:0.8rem;font-weight:400;font-family:'Source Sans 3',sans-serif">(${seg.duration_min} min)</small> ${badge(seg.icap)}</h3>
+      <p>${seg.description}</p>
+      <div class="card-actions">
+        <div class="approve-row">
+          <input type="checkbox" id="approve${i}" checked/>
+          <label for="approve${i}">✅ Approve segment</label>
+        </div>
+        <input id="note${i}" placeholder="Add instructor notes…" style="flex:1;font-size:0.82rem;min-width:160px;margin-top:0"/>
+      </div>
+    </div>`).join("");
+
+  // Analogies
+  document.getElementById("analogyCards").innerHTML =
+    plan.analogies.map((a,i)=>`<div class="card" style="animation-delay:${i*0.07}s"><p>${a}</p></div>`).join("");
+
+  // Activities
+  document.getElementById("activityCards").innerHTML =
+    plan.activities.map((a,i)=>`<div class="card" style="animation-delay:${i*0.07}s">
+      <h3>${a.title} ${badge(a.icap)}</h3><p>${a.prompt}</p></div>`).join("");
+
+  // Reflections
+  document.getElementById("reflectionList").innerHTML =
+    `<div class="card"><ul style="padding-left:1.2rem">
+    ${plan.reflections.map(r=>`<li style="margin-bottom:0.5rem;font-size:0.9rem;line-height:1.55">${r}</li>`).join("")}
+    </ul></div>`;
+
+  // Student support
+  document.getElementById("microExp").textContent = plan.student.micro_explanation;
+  document.getElementById("practiceQs").innerHTML = plan.student.practice_questions.map(q=>`
+    <div class="q-card ${q.difficulty.toLowerCase()}">
+      <div class="diff-label">${q.difficulty}</div>
+      <p style="font-size:0.9rem;font-weight:600;margin-top:0.2rem">${q.question}</p>
+      <p style="font-size:0.8rem;color:var(--muted);margin-top:0.4rem">💡 ${q.hint}</p>
+    </div>`).join("");
+  document.getElementById("srlCards").innerHTML =
+    plan.student.srl_prompts.map(s=>`<div class="card"><p>🔹 ${s}</p></div>`).join("");
+
+  // Rubric
+  const RUBRIC=[
+    {name:"Relevance",         desc:"Does output match the topic and stated learning objectives?"},
+    {name:"Clarity",           desc:"Is the language appropriate for the target student level?"},
+    {name:"Pedagogical Value", desc:"Does it support active, constructive, and interactive engagement (ICAP)?"},
+    {name:"Correctness",       desc:"Are concepts and examples technically accurate?"},
+    {name:"Usability",         desc:"Is the workflow easy and intuitive for instructors?"},
+  ];
+  document.getElementById("rubricRows").innerHTML = RUBRIC.map((cr,i)=>`
+    <div class="rubric-row">
+      <div class="r-name">${cr.name}</div>
+      <div class="r-desc">${cr.desc}</div>
+      <input type="range" min="1" max="5" value="3" id="r${i}" oninput="updateScore()"/>
+      <small style="color:var(--muted)">Score: <b id="rv${i}" style="color:var(--green-700)">3</b> / 5</small>
+    </div>`).join("");
+  updateScore();
+  buildExport(plan);
+
+  document.getElementById("planOutput").classList.remove("hidden");
+  ["noplan1","noplan2","noplan3"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+  ["studentContent","rubricContent","exportContent"].forEach(id=>document.getElementById(id).classList.remove("hidden"));
+}
+
+// ═══════════════════════════════════════════════════════
+// COGNITIVE LOAD METER
+// ═══════════════════════════════════════════════════════
+function renderCogLoad(plan){
+  const dur = plan.duration;
+  const passiveMin = plan.outline.filter(s=>s.icap==="Passive").reduce((a,s)=>a+s.duration_min,0);
+  const activeMin  = dur - passiveMin;
+  const passivePct = Math.round(passiveMin/dur*100);
+  const activePct  = 100 - passivePct;
+
+  // Estimate extraneous load based on level
+  const extraneousBase = {Beginner:65,Intermediate:40,Advanced:25}[plan.level]||40;
+  const germane = Math.min(90, 100-extraneousBase+Math.round(activePct*0.3));
+  const extraneous = extraneousBase;
+  const intrinsic = Math.min(100, Math.round((dur/90)*60));
+
+  const bars=[
+    {label:"Intrinsic Load",val:intrinsic,  cls:intrinsic>75?"load-high":intrinsic>50?"load-med":"load-low",  tip:"Complexity inherent to the topic"},
+    {label:"Extraneous Load",val:extraneous,cls:extraneous>60?"load-high":extraneous>35?"load-med":"load-low",tip:"Cognitive overhead from presentation"},
+    {label:"Germane Load",   val:germane,   cls:germane>60?"load-low":"load-med",                              tip:"Productive effort toward schema formation"},
+  ];
+
+  document.getElementById("cogBars").innerHTML = bars.map(b=>`
+    <div class="cog-bar-row" title="${b.tip}">
+      <div class="cog-bar-label">${b.label}</div>
+      <div class="cog-bar-track"><div class="cog-bar-fill ${b.cls}" style="width:${b.val}%"></div></div>
+      <div class="cog-bar-val" style="color:${b.cls==='load-high'?'#e76f51':b.cls==='load-med'?'#f4a261':'#74c69d'}">${b.val}%</div>
+    </div>`).join("");
+
+  const note = extraneous > 60
+    ? "⚠️ High extraneous load detected — consider breaking the core concept into smaller segments or using more visual scaffolding."
+    : extraneous > 35
+    ? "ℹ️ Moderate extraneous load — the lesson balance looks reasonable. Monitor pacing during delivery."
+    : "✅ Low extraneous load — this lesson structure should support effective schema formation for your students.";
+  document.getElementById("cogNote").textContent = note;
+}
+
+// ═══════════════════════════════════════════════════════
+// REGENERATE INDIVIDUAL SECTIONS
+// ═══════════════════════════════════════════════════════
+function regenerateSection(section){
+  if(!currentPlan)return;
+  // Shuffle/rotate content to simulate regeneration
+  if(section==="outline"){
+    currentPlan.outline.forEach(seg=>{
+      seg.description = seg.description + " [Regenerated: consider adding a worked example specific to your students' prior experience.]";
+    });
+    document.getElementById("outlineCards").innerHTML="";
+    renderLesson(currentPlan);
+  } else if(section==="analogies"){
+    const a = currentPlan.analogies;
+    currentPlan.analogies = [...a.slice(1), a[0]]; // rotate
+    renderLesson(currentPlan);
+  } else if(section==="activities"){
+    const ac = currentPlan.activities;
+    currentPlan.activities = [...ac.slice(1), ac[0]]; // rotate
+    renderLesson(currentPlan);
+  }
+  buildExport(currentPlan);
+}
+
+// ═══════════════════════════════════════════════════════
+// RUBRIC + EXPORT
+// ═══════════════════════════════════════════════════════
+function updateScore(){
+  let total=0;
+  for(let i=0;i<5;i++){
+    const v=parseInt(document.getElementById("r"+i).value);
+    document.getElementById("rv"+i).textContent=v;
+    total+=v;
+  }
+  const pct=Math.round(total/25*100);
+  document.getElementById("totalScore").textContent=`${total} / 25`;
+  document.getElementById("totalPct").textContent=pct+"%";
+  document.getElementById("rating").textContent=pct>=80?"Excellent ⭐":pct>=60?"Good 👍":"Needs Work ⚠️";
+}
+function saveRubric(){alert("Evaluation saved! Scores will appear in your export.");}
+
+function buildExport(plan){
+  const lines=[
+    `╔══════════════════════════════════════════════════╗`,
+    `║         LECTUREAI — LESSON PLAN EXPORT           ║`,
+    `╚══════════════════════════════════════════════════╝`,
+    `Topic:     ${plan.topic}`,
+    `Category:  ${CAT_LABELS[plan.category]||"General"}`,
+    `Generated: ${plan.generatedAt}`,
+    `Level:     ${plan.level}`,
+    `Duration:  ${plan.duration} minutes`,
+    `Style:     ${plan.style}`,
+    ``,`─────────────────────────────────────────`,
+    `LEARNING OBJECTIVES`,`─────────────────────────────────────────`,
+    plan.objectives,
+    ``,`─────────────────────────────────────────`,
+    `LECTURE OUTLINE (ICAP-Aligned)`,`─────────────────────────────────────────`,
+    ...plan.outline.map((s,i)=>`\n${i+1}. ${s.segment} (${s.duration_min} min) [${s.icap}]\n   ${s.description}`),
+    ``,`─────────────────────────────────────────`,
+    `EXAMPLES & ANALOGIES`,`─────────────────────────────────────────`,
+    ...plan.analogies.map(a=>`\n• ${a}`),
+    ``,`─────────────────────────────────────────`,
+    `IN-CLASS ACTIVITY PROMPTS`,`─────────────────────────────────────────`,
+    ...plan.activities.map(a=>`\n[${a.icap}] ${a.title}\n   ${a.prompt}`),
+    ``,`─────────────────────────────────────────`,
+    `REFLECTION QUESTIONS`,`─────────────────────────────────────────`,
+    ...plan.reflections.map(r=>`• ${r}`),
+    ``,`─────────────────────────────────────────`,
+    `STUDENT SUPPORT — MICRO-EXPLANATION`,`─────────────────────────────────────────`,
+    plan.student.micro_explanation,
+    ``,`─────────────────────────────────────────`,
+    `PRACTICE QUESTIONS`,`─────────────────────────────────────────`,
+    ...plan.student.practice_questions.map(q=>`\n[${q.difficulty}] ${q.question}\n   Hint: ${q.hint}`),
+    ``,`─────────────────────────────────────────`,
+    `SELF-REGULATED LEARNING PROMPTS`,`─────────────────────────────────────────`,
+    ...plan.student.srl_prompts.map(s=>`• ${s}`),
+    ``,`Generated by LectureAI — Based on Jamil (2025) ACM TOCE`,
+  ];
+  document.getElementById("exportPreview").textContent=lines.join("\n");
+}
+function downloadTxt(){
+  if(!currentPlan)return;
+  const a=document.createElement("a");
+  a.href="data:text/plain;charset=utf-8,"+encodeURIComponent(document.getElementById("exportPreview").textContent);
+  a.download=`LessonPlan_${currentPlan.topic.replace(/\s+/g,"_")}.txt`;
+  a.click();
+}
+
+function switchTab(id){
+  document.querySelectorAll(".tab").forEach((t,i)=>{
+    t.classList.toggle("active",["builder","student","rubric","export"][i]===id);
+  });
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+</script>
+</body>
+</html>
